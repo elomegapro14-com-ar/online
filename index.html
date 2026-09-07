@@ -33,6 +33,7 @@
             gap: 15px;
             align-content: flex-start;
             flex-wrap: wrap;
+            z-index: 1;
         }
 
         /* Iconos de Escritorio */
@@ -43,6 +44,13 @@
             width: 70px;
             cursor: pointer;
             padding: 4px;
+            position: relative;
+            z-index: 2;
+            pointer-events: auto !important;
+        }
+
+        .shortcut-icon * {
+            pointer-events: none; /* Asegura que el evento de clic lo reciba el contenedor del icono */
         }
 
         .shortcut-icon:active .icon-label,
@@ -116,6 +124,7 @@
             resize: both;
             overflow: hidden;
             padding: 2px;
+            z-index: 10;
         }
 
         .window.hidden {
@@ -266,6 +275,7 @@
             overflow: hidden;
         }
 
+        /* Barra de Tareas */
         #taskbar {
             width: 100%;
             height: 30px;
@@ -312,27 +322,27 @@
 <body>
 
     <div id="desktop">
-        <div class="shortcut-icon" tabindex="0" onclick="openWindow('winCredits')">
+        <div class="shortcut-icon" tabindex="0" data-window="winCredits">
             <div class="unknown-file">?</div>
             <span class="icon-label">Creditos.unk</span>
         </div>
 
-        <div class="shortcut-icon" tabindex="0" onclick="openWindow('winNotepad')">
+        <div class="shortcut-icon" tabindex="0" data-window="winNotepad">
             <div class="icon-box">📝</div>
             <span class="icon-label">Bloc de notas</span>
         </div>
 
-        <div class="shortcut-icon" tabindex="0" onclick="openWindow('winCalc')">
+        <div class="shortcut-icon" tabindex="0" data-window="winCalc">
             <div class="icon-box">🧮</div>
             <span class="icon-label">Calculadora</span>
         </div>
 
-        <div class="shortcut-icon" tabindex="0" onclick="openWindow('winPaint')">
+        <div class="shortcut-icon" tabindex="0" data-window="winPaint">
             <div class="icon-box">🎨</div>
             <span class="icon-label">Paint</span>
         </div>
 
-        <div class="shortcut-icon" tabindex="0" onclick="openWindow('winGames')">
+        <div class="shortcut-icon" tabindex="0" data-window="winGames">
             <div class="icon-box">🎮</div>
             <span class="icon-label">Juegos Flash</span>
         </div>
@@ -455,8 +465,23 @@
         const GITHUB_USERNAME = "elomegapro14-com-ar";
         const REPO_NAME = "online";
 
+        // --- Sistema Central de Eventos para Iconos ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const icons = document.querySelectorAll('.shortcut-icon');
+            icons.forEach(icon => {
+                const openApp = () => {
+                    const winId = icon.getAttribute('data-window');
+                    if (winId) openWindow(winId);
+                };
+
+                // Soporta clic simple y doble clic
+                icon.addEventListener('click', openApp);
+                icon.addEventListener('dblclick', openApp);
+            });
+        });
+
         // --- Gestión de Ventanas ---
-        let zIndex = 10;
+        let zIndex = 100;
 
         function openWindow(id) {
             const win = document.getElementById(id);
@@ -544,7 +569,7 @@
 
         // --- Paint ---
         const canvas = document.getElementById('paintCanvas');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas ? canvas.getContext('2d') : null;
         const canvasBox = document.getElementById('canvasBox');
         const colorPicker = document.getElementById('paintColor');
         const sizePicker = document.getElementById('paintSize');
@@ -553,34 +578,29 @@
         let isEraser = false;
 
         function resizeCanvas() {
-            if (!canvasBox) return;
+            if (!canvasBox || !ctx) return;
             const imgData = ctx.getImageData(0, 0, canvas.width || 1, canvas.height || 1);
             canvas.width = canvasBox.clientWidth;
             canvas.height = canvasBox.clientHeight;
             ctx.putImageData(imgData, 0, 0);
         }
 
-        const resizeObserver = new ResizeObserver(() => {
-            if (!document.getElementById('winPaint').classList.contains('hidden')) {
-                resizeCanvas();
-            }
-        });
-        if (canvasBox) resizeObserver.observe(canvasBox);
+        if (canvas) {
+            canvas.addEventListener('mousedown', (e) => {
+                isDrawing = true;
+                draw(e);
+            });
 
-        canvas.addEventListener('mousedown', (e) => {
-            isDrawing = true;
-            draw(e);
-        });
+            canvas.addEventListener('mouseup', () => {
+                isDrawing = false;
+                ctx.beginPath();
+            });
 
-        canvas.addEventListener('mouseup', () => {
-            isDrawing = false;
-            ctx.beginPath();
-        });
-
-        canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mousemove', draw);
+        }
 
         function draw(e) {
-            if (!isDrawing) return;
+            if (!isDrawing || !ctx) return;
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
@@ -597,7 +617,7 @@
 
         function setEraser() { isEraser = true; }
         function setPencil() { isEraser = false; }
-        function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+        function clearCanvas() { if(ctx) ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
         // --- Escaneo Automático y Carga Directa (GitHub API) ---
         let gamesLoaded = false;
@@ -613,7 +633,6 @@
                 if (!response.ok) throw new Error('No se pudo acceder a la carpeta');
 
                 const files = await response.json();
-                
                 const swfFiles = files.filter(file => file.name.toLowerCase().endsWith('.swf'));
 
                 if (swfFiles.length === 0) {
@@ -626,7 +645,6 @@
                 swfFiles.forEach(file => {
                     const option = document.createElement('option');
                     option.value = file.download_url;
-                    
                     const cleanName = file.name.replace('.swf', '').replace(/[_|-]/g, ' ');
                     option.textContent = cleanName;
                     select.appendChild(option);
@@ -682,8 +700,11 @@
 
         // --- Reloj del Sistema ---
         function updateClock() {
-            const now = new Date();
-            document.getElementById('clockDisplay').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const clock = document.getElementById('clockDisplay');
+            if (clock) {
+                const now = new Date();
+                clock.innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
         }
         setInterval(updateClock, 1000);
         updateClock();
@@ -704,7 +725,7 @@
 
             const state = {
                 notepad: document.getElementById('notepadText').value,
-                paintCanvas: canvas.toDataURL(),
+                paintCanvas: canvas ? canvas.toDataURL() : '',
                 windows: windowsState
             };
 
@@ -730,8 +751,8 @@
                         document.getElementById('notepadText').value = state.notepad;
                     }
 
-                    if (state.paintCanvas) {
-                        const img = new Image(); // Corregido: declaración previa faltante
+                    if (state.paintCanvas && ctx) {
+                        const img = new Image();
                         img.onload = function() {
                             clearCanvas();
                             ctx.drawImage(img, 0, 0);
@@ -748,7 +769,7 @@
                                 win.style.left = wState.left;
                                 win.style.width = wState.width;
                                 win.style.height = wState.height;
-                                win.style.zIndex = wState.zIndex || 1;
+                                win.style.zIndex = wState.zIndex || 10;
                                 
                                 if (wState.hidden) {
                                     win.classList.add('hidden');
