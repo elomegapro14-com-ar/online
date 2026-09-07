@@ -61,7 +61,6 @@
             margin-bottom: 2px;
         }
 
-        /* Icono Archivo Desconocido */
         .unknown-file {
             width: 28px;
             height: 34px;
@@ -95,7 +94,6 @@
             text-shadow: 1px 1px 0px #000;
         }
 
-        /* Estilo Biselado Retro */
         .outset-border {
             border: 2px solid;
             border-color: #ffffff #808080 #808080 #ffffff;
@@ -121,7 +119,7 @@
         }
 
         .window.hidden {
-            display: none;
+            display: none !important;
         }
 
         .window-header {
@@ -169,7 +167,6 @@
             background-color: #c0c0c0;
         }
 
-        /* Bloc de Notas */
         textarea.notepad-area {
             width: 100%;
             height: 100%;
@@ -182,7 +179,6 @@
             background-color: #ffffff;
         }
 
-        /* Calculadora */
         .calc-screen {
             width: 100%;
             height: 26px;
@@ -209,7 +205,6 @@
             font-size: 11px;
         }
 
-        /* Paint */
         .paint-tools {
             display: flex;
             gap: 4px;
@@ -238,7 +233,6 @@
             cursor: crosshair;
         }
 
-        /* Créditos */
         .credits-text {
             background: #ffffff;
             padding: 8px;
@@ -248,7 +242,6 @@
             overflow-y: auto;
         }
 
-        /* Juegos Flash */
         .games-toolbar {
             display: flex;
             gap: 6px;
@@ -273,7 +266,6 @@
             overflow: hidden;
         }
 
-        /* Barra de Tareas */
         #taskbar {
             width: 100%;
             height: 30px;
@@ -285,6 +277,7 @@
             align-items: center;
             padding: 2px 3px;
             justify-content: space-between;
+            z-index: 99999;
         }
 
         .taskbar-left {
@@ -467,6 +460,8 @@
 
         function openWindow(id) {
             const win = document.getElementById(id);
+            if (!win) return;
+            
             win.classList.remove('hidden');
             bringToFront(win);
 
@@ -479,7 +474,10 @@
         }
 
         function closeWindow(id) {
-            document.getElementById(id).classList.add('hidden');
+            const win = document.getElementById(id);
+            if (!win) return;
+            
+            win.classList.add('hidden');
             if (id === 'winGames') {
                 stopFlashGame(true);
             }
@@ -555,7 +553,8 @@
         let isEraser = false;
 
         function resizeCanvas() {
-            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            if (!canvasBox) return;
+            const imgData = ctx.getImageData(0, 0, canvas.width || 1, canvas.height || 1);
             canvas.width = canvasBox.clientWidth;
             canvas.height = canvasBox.clientHeight;
             ctx.putImageData(imgData, 0, 0);
@@ -566,7 +565,7 @@
                 resizeCanvas();
             }
         });
-        resizeObserver.observe(canvasBox);
+        if (canvasBox) resizeObserver.observe(canvasBox);
 
         canvas.addEventListener('mousedown', (e) => {
             isDrawing = true;
@@ -645,20 +644,22 @@
                 return;
             }
 
-            // Detener el juego anterior sin reiniciar el menú de selección
             stopFlashGame(false);
 
             const flashArea = document.getElementById('flashArea');
-            // Limpiar completamente el área del juego para que NO quede el texto inicial
             flashArea.innerHTML = '';
 
-            const ruffle = window.RufflePlayer.newest();
-            const player = ruffle.createPlayer();
-            player.style.width = "100%";
-            player.style.height = "100%";
+            if (window.RufflePlayer) {
+                const ruffle = window.RufflePlayer.newest();
+                const player = ruffle.createPlayer();
+                player.style.width = "100%";
+                player.style.height = "100%";
 
-            flashArea.appendChild(player);
-            player.load(swfDirectUrl);
+                flashArea.appendChild(player);
+                player.load(swfDirectUrl);
+            } else {
+                flashArea.innerHTML = '<p style="color: red; text-align: center;">Error: Ruffle no está cargado.</p>';
+            }
         }
 
         function stopFlashGame(resetSelect = false) {
@@ -730,7 +731,8 @@
                     }
 
                     if (state.paintCanvas) {
-                        const img.onload = function() {
+                        const img = new Image(); // Corregido: declaración previa faltante
+                        img.onload = function() {
                             clearCanvas();
                             ctx.drawImage(img, 0, 0);
                         };
