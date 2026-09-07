@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Retro Desktop OS</title>
-    <!-- Carga del emulador de Flash (Ruffle) -->
     <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
     <style>
         * {
@@ -271,6 +270,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
         }
 
         /* Barra de Tareas */
@@ -319,37 +319,31 @@
 <body>
 
     <div id="desktop">
-        <!-- Acceso Directo Créditos -->
         <div class="shortcut-icon" tabindex="0" onclick="openWindow('winCredits')">
             <div class="unknown-file">?</div>
             <span class="icon-label">Creditos.unk</span>
         </div>
 
-        <!-- Acceso Directo Bloc de Notas -->
         <div class="shortcut-icon" tabindex="0" onclick="openWindow('winNotepad')">
             <div class="icon-box">📝</div>
             <span class="icon-label">Bloc de notas</span>
         </div>
 
-        <!-- Acceso Directo Calculadora -->
         <div class="shortcut-icon" tabindex="0" onclick="openWindow('winCalc')">
             <div class="icon-box">🧮</div>
             <span class="icon-label">Calculadora</span>
         </div>
 
-        <!-- Acceso Directo Paint -->
         <div class="shortcut-icon" tabindex="0" onclick="openWindow('winPaint')">
             <div class="icon-box">🎨</div>
             <span class="icon-label">Paint</span>
         </div>
 
-        <!-- Acceso Directo Juegos Flash -->
         <div class="shortcut-icon" tabindex="0" onclick="openWindow('winGames')">
             <div class="icon-box">🎮</div>
             <span class="icon-label">Juegos Flash</span>
         </div>
 
-        <!-- Ventana Créditos -->
         <div id="winCredits" class="window outset-border hidden" style="width: 360px; height: 230px; top: 40px; left: 80px;">
             <div class="window-header" onmousedown="startDrag(event, 'winCredits')">
                 <span class="window-title">📄 Creditos_y_Agradecimientos.txt</span>
@@ -366,7 +360,6 @@
             </div>
         </div>
 
-        <!-- Ventana Bloc de Notas -->
         <div id="winNotepad" class="window outset-border hidden" style="width: 320px; height: 220px; top: 70px; left: 130px;">
             <div class="window-header" onmousedown="startDrag(event, 'winNotepad')">
                 <span class="window-title">📝 Bloc de notas</span>
@@ -379,7 +372,6 @@
             </div>
         </div>
 
-        <!-- Ventana Calculadora -->
         <div id="winCalc" class="window outset-border hidden" style="width: 200px; height: 250px; top: 100px; left: 180px;">
             <div class="window-header" onmousedown="startDrag(event, 'winCalc')">
                 <span class="window-title">🧮 Calculadora</span>
@@ -413,7 +405,6 @@
             </div>
         </div>
 
-        <!-- Ventana Paint -->
         <div id="winPaint" class="window outset-border hidden" style="width: 420px; height: 300px; top: 80px; left: 230px;">
             <div class="window-header" onmousedown="startDrag(event, 'winPaint')">
                 <span class="window-title">🎨 Paint</span>
@@ -435,7 +426,6 @@
             </div>
         </div>
 
-        <!-- Ventana Juegos Flash Autoload con GitHub API -->
         <div id="winGames" class="window outset-border hidden" style="width: 550px; height: 420px; top: 50px; left: 280px;">
             <div class="window-header" onmousedown="startDrag(event, 'winGames')">
                 <span class="window-title">🎮 Juegos Flash</span>
@@ -457,7 +447,6 @@
         </div>
     </div>
 
-    <!-- Barra de Tareas -->
     <div id="taskbar">
         <div class="taskbar-left">
             <button class="start-button outset-border">💻 Inicio</button>
@@ -491,9 +480,8 @@
 
         function closeWindow(id) {
             document.getElementById(id).classList.add('hidden');
-            // Al cerrar la ventana de juegos, destruimos el emulador por completo
             if (id === 'winGames') {
-                stopFlashGame();
+                stopFlashGame(true);
             }
         }
 
@@ -652,16 +640,18 @@
         }
 
         function playRepoSWF(swfDirectUrl) {
-            // Si el usuario selecciona la opción vacía o deselecciona
             if (!swfDirectUrl) {
-                stopFlashGame();
+                stopFlashGame(true);
                 return;
             }
 
-            // Si ya había un juego corriendo, detenerlo antes de instanciar uno nuevo
-            stopFlashGame();
+            // Detener el juego anterior sin reiniciar el menú de selección
+            stopFlashGame(false);
 
             const flashArea = document.getElementById('flashArea');
+            // Limpiar completamente el área del juego para que NO quede el texto inicial
+            flashArea.innerHTML = '';
+
             const ruffle = window.RufflePlayer.newest();
             const player = ruffle.createPlayer();
             player.style.width = "100%";
@@ -671,19 +661,21 @@
             player.load(swfDirectUrl);
         }
 
-        // Función encargada de detener y destruir la instancia del juego Flash
-        function stopFlashGame() {
+        function stopFlashGame(resetSelect = false) {
             const flashArea = document.getElementById('flashArea');
             if (flashArea) {
                 const player = flashArea.querySelector('ruffle-player');
                 if (player && typeof player.destroy === 'function') {
-                    player.destroy(); // Detiene WebAssembly, audio y loops de juego
+                    player.destroy();
                 }
                 flashArea.innerHTML = '<p style="color: #aaa; text-align: center;">Selecciona un juego de la lista para empezar a jugar.</p>';
             }
-            const select = document.getElementById('flashSelect');
-            if (select) {
-                select.value = "";
+
+            if (resetSelect) {
+                const select = document.getElementById('flashSelect');
+                if (select) {
+                    select.value = "";
+                }
             }
         }
 
@@ -738,8 +730,7 @@
                     }
 
                     if (state.paintCanvas) {
-                        const img = new Image();
-                        img.onload = function() {
+                        const img.onload = function() {
                             clearCanvas();
                             ctx.drawImage(img, 0, 0);
                         };
