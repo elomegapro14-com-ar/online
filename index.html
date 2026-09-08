@@ -340,6 +340,7 @@
             overflow-y: auto;
         }
 
+        /* Área de Juegos */
         .games-toolbar {
             display: flex;
             gap: 6px;
@@ -378,15 +379,14 @@
         }
 
         .game-container {
-            width: 100%;
-            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
+            background-color: #000;
         }
 
-        /* Modos de Relación de Aspecto */
+        /* Proporciones de aspecto forzadas */
         .game-container.aspect-free {
             width: 100%;
             height: 100%;
@@ -396,6 +396,7 @@
             aspect-ratio: 4 / 3;
             max-width: 100%;
             max-height: 100%;
+            width: auto;
             height: auto;
         }
 
@@ -403,7 +404,14 @@
             aspect-ratio: 16 / 9;
             max-width: 100%;
             max-height: 100%;
+            width: auto;
             height: auto;
+        }
+
+        .game-container ruffle-player {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
         }
 
         /* UI Configuración */
@@ -649,7 +657,7 @@
             </div>
         </div>
 
-        <!-- Ventana Paint Pro con Opacidad de Capa -->
+        <!-- Ventana Paint Pro -->
         <div id="winPaint" class="window outset-border hidden" style="width: 600px; height: 400px; top: 80px; left: 230px;">
             <div class="window-header" onmousedown="startDrag(event, 'winPaint')">
                 <span class="window-title">🎨 Paint Studio</span>
@@ -685,7 +693,7 @@
 
                     <div class="paint-main">
                         <div class="paint-canvas-container inset-border" id="canvasBox">
-                            <!-- Canvases de capas dinámicos -->
+                            <!-- Canvases dinámicos -->
                         </div>
 
                         <div class="layers-panel outset-border">
@@ -694,7 +702,7 @@
                                 <button class="outset-border" style="flex:1;" onclick="deleteActiveLayer()">- Borrar</button>
                             </div>
                             <div class="layers-list inset-border" id="layersList">
-                                <!-- Elementos de capa visual -->
+                                <!-- Lista de capas -->
                             </div>
                             <div style="display: flex; gap: 2px;">
                                 <button class="outset-border" style="flex:1;" onclick="moveLayerUp()">▲ Subir</button>
@@ -706,7 +714,7 @@
             </div>
         </div>
 
-        <!-- Ventana Juegos Flash con Resolución Adaptable -->
+        <!-- Ventana Juegos Flash -->
         <div id="winGames" class="window outset-border hidden" style="width: 580px; height: 440px; top: 50px; left: 280px;">
             <div class="window-header" onmousedown="startDrag(event, 'winGames')">
                 <span class="window-title">🎮 Juegos Flash</span>
@@ -741,7 +749,7 @@
             </div>
         </div>
 
-        <!-- Ventana Solitario con Resolución Adaptable -->
+        <!-- Ventana Solitario -->
         <div id="winSolitaire" class="window outset-border hidden" style="width: 580px; height: 450px; top: 60px; left: 160px;">
             <div class="window-header" onmousedown="startDrag(event, 'winSolitaire')">
                 <span class="window-title">🂠 Solitario</span>
@@ -784,11 +792,11 @@
     </div>
 
     <script>
-        // --- CONFIGURACIÓN DE TU REPOSITORIO DE GITHUB ---
+        // CONFIGURACIÓN DE GITHUB
         const GITHUB_USERNAME = "elomegapro14-com-ar";
         const REPO_NAME = "online";
 
-        // --- Estado de Personalización ---
+        // Estado de Personalización
         let themeConfig = {
             bgColor: '#008080',
             bgImage: '',
@@ -797,7 +805,7 @@
             winBodyColor: '#c0c0c0'
         };
 
-        // --- Sistema Central de Eventos para Iconos ---
+        // Eventos para los iconos de escritorio
         document.addEventListener('DOMContentLoaded', () => {
             const icons = document.querySelectorAll('.shortcut-icon');
             icons.forEach(icon => {
@@ -811,7 +819,7 @@
             });
         });
 
-        // --- Gestión de Ventanas ---
+        // Gestión de Ventanas
         let zIndex = 100;
 
         function openWindow(id) {
@@ -866,7 +874,7 @@
             win.addEventListener('mousedown', () => bringToFront(win));
         });
 
-        // --- Arrastrar Ventanas ---
+        // Arrastrar Ventanas
         let isDragging = false, dragWin = null, offsetX = 0, offsetY = 0;
 
         function startDrag(e, id) {
@@ -907,7 +915,7 @@
             document.removeEventListener('mouseup', stopDrag);
         }
 
-        // --- Funciones de Personalización ---
+        // Personalización
         function setDesktopBgColor(color) {
             themeConfig.bgColor = color;
             document.getElementById('desktop').style.backgroundColor = color;
@@ -967,7 +975,7 @@
             themeConfig.winHeaderColor = '#000080';
         }
 
-        // --- Calculadora ---
+        // Calculadora
         const calcDisplay = document.getElementById('calcDisplay');
         let calcExpr = '';
 
@@ -992,9 +1000,7 @@
             }
         }
 
-        // ==========================================
-        // --- PAINT STUDIO (Capas, Opacidad y Pinceles) ---
-        // ==========================================
+        // PAINT STUDIO (Opacidad y Capas)
         const canvasBox = document.getElementById('canvasBox');
         const colorPicker = document.getElementById('paintColor');
         const sizePicker = document.getElementById('paintSize');
@@ -1109,7 +1115,6 @@
                 item.className = 'layer-item' + (idx === activeLayerIndex ? ' active' : '');
                 item.onclick = () => setActiveLayer(idx);
 
-                // Fila Superior (Visibilidad + Nombre)
                 const rowTop = document.createElement('div');
                 rowTop.className = 'layer-row-top';
 
@@ -1129,7 +1134,6 @@
                 rowTop.appendChild(chk);
                 rowTop.appendChild(lbl);
 
-                // Fila Inferior (Control de Opacidad Individual)
                 const rowBottom = document.createElement('div');
                 rowBottom.className = 'layer-row-bottom';
 
@@ -1310,9 +1314,7 @@
         });
         if (canvasBox) paintResizeObserver.observe(canvasBox);
 
-        // ==========================================
-        // --- JUEGOS Y SOLITARIO (Con Relación de Aspecto) ---
-        // ==========================================
+        // JUEGOS Y SOLITARIO (Gestión de Relación de Aspecto Fija)
         let gamesLoaded = false;
         let activeGamePlayer = null;
         let activeSolitairePlayer = null;
@@ -1323,6 +1325,14 @@
 
             container.classList.remove('aspect-free', 'aspect-4-3', 'aspect-16-9');
             container.classList.add(aspectClass);
+
+            const parentWin = container.closest('.window');
+            if (parentWin && aspectClass !== 'aspect-free') {
+                const ratio = aspectClass === 'aspect-4-3' ? (4 / 3) : (16 / 9);
+                const currentWidth = parentWin.clientWidth;
+                const newHeight = Math.round(currentWidth / ratio) + 65;
+                parentWin.style.height = newHeight + 'px';
+            }
         }
 
         async function loadGamesFromGitHubAPI() {
@@ -1470,7 +1480,7 @@
             }
         }
 
-        // --- Reloj del Sistema ---
+        // Reloj
         function updateClock() {
             const clock = document.getElementById('clockDisplay');
             if (clock) {
@@ -1481,7 +1491,7 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // --- Guardar y Cargar Estado JSON ---
+        // Guardar y Cargar Estado JSON
         function saveStateJSON() {
             const windowsState = {};
             document.querySelectorAll('.window').forEach(win => {
