@@ -35,6 +35,10 @@
             align-content: flex-start;
             flex-wrap: wrap;
             z-index: 1;
+            background-color: #008080;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
         }
 
         /* Iconos de Escritorio */
@@ -294,6 +298,47 @@
             overflow: hidden;
         }
 
+        /* UI Configuración */
+        .config-group {
+            border: 1px solid #808080;
+            padding: 8px;
+            margin-bottom: 8px;
+            background: rgba(255,255,255,0.2);
+        }
+
+        .config-group legend {
+            font-weight: bold;
+            padding: 0 4px;
+        }
+
+        .config-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            gap: 8px;
+        }
+
+        .config-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .config-row label {
+            font-weight: bold;
+        }
+
+        .config-row input[type="color"] {
+            border: 1px solid #000;
+            width: 40px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .config-row button {
+            padding: 2px 8px;
+            cursor: pointer;
+        }
+
         /* Barra de Tareas */
         #taskbar {
             width: 100%;
@@ -333,7 +378,7 @@
             background-color: #c0c0c0;
         }
 
-        #fileInput {
+        #fileInput, #wallpaperInput {
             display: none;
         }
     </style>
@@ -341,6 +386,12 @@
 <body>
 
     <div id="desktop">
+        <!-- Acceso Directo Configuración -->
+        <div class="shortcut-icon" tabindex="0" data-window="winConfig">
+            <div class="icon-box">⚙️</div>
+            <span class="icon-label">Configuración</span>
+        </div>
+
         <!-- Acceso Directo Créditos -->
         <div class="shortcut-icon" tabindex="0" data-window="winCredits">
             <div class="unknown-file">?</div>
@@ -375,6 +426,55 @@
         <div class="shortcut-icon" tabindex="0" data-window="winSolitaire">
             <div class="icon-box">🂠</div>
             <span class="icon-label">Solitario</span>
+        </div>
+
+        <!-- Ventana Configuración -->
+        <div id="winConfig" class="window outset-border hidden" style="width: 320px; height: 310px; top: 30px; left: 50px;">
+            <div class="window-header" onmousedown="startDrag(event, 'winConfig')">
+                <span class="window-title">⚙️ Personalización del Sistema</span>
+                <div class="window-controls">
+                    <button class="outset-border" onclick="closeWindow('winConfig')">X</button>
+                </div>
+            </div>
+            <div class="window-body">
+                <fieldset class="config-group">
+                    <legend>Fondo de Escritorio</legend>
+                    <div class="config-row">
+                        <label for="bgColor">Color de fondo:</label>
+                        <input type="color" id="bgColor" value="#008080" onchange="setDesktopBgColor(this.value)">
+                    </div>
+                    <div class="config-row">
+                        <label>Imagen de fondo:</label>
+                        <button class="outset-border" onclick="document.getElementById('wallpaperInput').click()">📁 Cargar Imagen</button>
+                        <button class="outset-border" onclick="removeWallpaper()">❌ Quitar</button>
+                        <input type="file" id="wallpaperInput" accept="image/*" onchange="loadWallpaperImage(event)">
+                    </div>
+                </fieldset>
+
+                <fieldset class="config-group">
+                    <legend>Barra de Tareas</legend>
+                    <div class="config-row">
+                        <label for="taskbarColor">Color de la barra:</label>
+                        <input type="color" id="taskbarColor" value="#c0c0c0" onchange="setTaskbarColor(this.value)">
+                    </div>
+                </fieldset>
+
+                <fieldset class="config-group">
+                    <legend>Ventanas</legend>
+                    <div class="config-row">
+                        <label for="winHeaderColor">Barra superior (Título):</label>
+                        <input type="color" id="winHeaderColor" value="#000080" onchange="setWindowHeaderColor(this.value)">
+                    </div>
+                    <div class="config-row">
+                        <label for="winBodyColor">Fondo de ventana:</label>
+                        <input type="color" id="winBodyColor" value="#c0c0c0" onchange="setWindowBodyColor(this.value)">
+                    </div>
+                </fieldset>
+
+                <div style="text-align: right; margin-top: auto;">
+                    <button class="outset-border" style="padding: 3px 10px;" onclick="resetTheme()">Restablecer Tema Por Defecto</button>
+                </div>
+            </div>
         </div>
 
         <!-- Ventana Créditos -->
@@ -527,6 +627,15 @@
         const GITHUB_USERNAME = "elomegapro14-com-ar";
         const REPO_NAME = "online";
 
+        // --- Estado de Personalización ---
+        let themeConfig = {
+            bgColor: '#008080',
+            bgImage: '',
+            taskbarColor: '#c0c0c0',
+            winHeaderColor: '#000080',
+            winBodyColor: '#c0c0c0'
+        };
+
         // --- Sistema Central de Eventos para Iconos ---
         document.addEventListener('DOMContentLoaded', () => {
             const icons = document.querySelectorAll('.shortcut-icon');
@@ -586,9 +695,7 @@
             const desktopRect = desktop.getBoundingClientRect();
             const winRect = win.getBoundingClientRect();
 
-            // Verificar si la cabecera está fuera de la pantalla
             if (winRect.top < 0 || winRect.top > desktopRect.height - 30 || winRect.left > desktopRect.width - 50 || winRect.right < 50) {
-                // Recentrar ventana en el escritorio
                 win.style.top = Math.max(20, (desktopRect.height - winRect.height) / 2) + 'px';
                 win.style.left = Math.max(20, (desktopRect.width - winRect.width) / 2) + 'px';
             }
@@ -621,24 +728,12 @@
             let newLeft = e.clientX - offsetX;
             let newTop = e.clientY - offsetY;
 
-            // Restricción TOP: Impide que la barra de título suba más arriba del borde superior
-            if (newTop < 0) {
-                newTop = 0;
-            }
+            if (newTop < 0) newTop = 0;
+            if (newTop > desktopHeight - 30) newTop = desktopHeight - 30;
 
-            // Restricción BOTTOM: Mantiene al menos la barra visible antes de la barra de tareas
-            if (newTop > desktopHeight - 30) {
-                newTop = desktopHeight - 30;
-            }
-
-            // Restricciones LATERALES: Asegura que al menos 100px de la ventana sean visibles para poder reengancharla
             const minVisibleWidth = 100;
-            if (newLeft < -(winWidth - minVisibleWidth)) {
-                newLeft = -(winWidth - minVisibleWidth);
-            }
-            if (newLeft > desktopWidth - minVisibleWidth) {
-                newLeft = desktopWidth - minVisibleWidth;
-            }
+            if (newLeft < -(winWidth - minVisibleWidth)) newLeft = -(winWidth - minVisibleWidth);
+            if (newLeft > desktopWidth - minVisibleWidth) newLeft = desktopWidth - minVisibleWidth;
 
             dragWin.style.left = newLeft + 'px';
             dragWin.style.top = newTop + 'px';
@@ -649,6 +744,67 @@
             dragWin = null;
             document.removeEventListener('mousemove', onDrag);
             document.removeEventListener('mouseup', stopDrag);
+        }
+
+        // --- Funciones de Personalización ---
+        function setDesktopBgColor(color) {
+            themeConfig.bgColor = color;
+            const desktop = document.getElementById('desktop');
+            desktop.style.backgroundColor = color;
+        }
+
+        function loadWallpaperImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                themeConfig.bgImage = e.target.result;
+                document.getElementById('desktop').style.backgroundImage = `url('${themeConfig.bgImage}')`;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeWallpaper() {
+            themeConfig.bgImage = '';
+            document.getElementById('desktop').style.backgroundImage = 'none';
+            document.getElementById('wallpaperInput').value = '';
+        }
+
+        function setTaskbarColor(color) {
+            themeConfig.taskbarColor = color;
+            document.getElementById('taskbar').style.backgroundColor = color;
+        }
+
+        function setWindowHeaderColor(color) {
+            themeConfig.winHeaderColor = color;
+            document.querySelectorAll('.window-header').forEach(header => {
+                header.style.background = color;
+            });
+        }
+
+        function setWindowBodyColor(color) {
+            themeConfig.winBodyColor = color;
+            document.querySelectorAll('.window').forEach(win => {
+                win.style.backgroundColor = color;
+            });
+            document.querySelectorAll('.window-body').forEach(body => {
+                body.style.backgroundColor = color;
+            });
+        }
+
+        function resetTheme() {
+            setDesktopBgColor('#008080');
+            removeWallpaper();
+            setTaskbarColor('#c0c0c0');
+            setWindowHeaderColor('linear-gradient(90deg, #000080, #1084d0)');
+            setWindowBodyColor('#c0c0c0');
+
+            document.getElementById('bgColor').value = '#008080';
+            document.getElementById('taskbarColor').value = '#c0c0c0';
+            document.getElementById('winHeaderColor').value = '#000080';
+            document.getElementById('winBodyColor').value = '#c0c0c0';
+            themeConfig.winHeaderColor = '#000080';
         }
 
         // --- Calculadora ---
@@ -925,6 +1081,7 @@
             const state = {
                 notepad: document.getElementById('notepadText').value,
                 paintCanvas: canvas ? canvas.toDataURL() : '',
+                theme: themeConfig,
                 windows: windowsState
             };
 
@@ -948,6 +1105,31 @@
 
                     if (state.notepad !== undefined) {
                         document.getElementById('notepadText').value = state.notepad;
+                    }
+
+                    if (state.theme) {
+                        if (state.theme.bgColor) {
+                            setDesktopBgColor(state.theme.bgColor);
+                            document.getElementById('bgColor').value = state.theme.bgColor;
+                        }
+                        if (state.theme.bgImage) {
+                            themeConfig.bgImage = state.theme.bgImage;
+                            document.getElementById('desktop').style.backgroundImage = `url('${state.theme.bgImage}')`;
+                        } else {
+                            removeWallpaper();
+                        }
+                        if (state.theme.taskbarColor) {
+                            setTaskbarColor(state.theme.taskbarColor);
+                            document.getElementById('taskbarColor').value = state.theme.taskbarColor;
+                        }
+                        if (state.theme.winHeaderColor) {
+                            setWindowHeaderColor(state.theme.winHeaderColor);
+                            document.getElementById('winHeaderColor').value = state.theme.winHeaderColor;
+                        }
+                        if (state.theme.winBodyColor) {
+                            setWindowBodyColor(state.theme.winBodyColor);
+                            document.getElementById('winBodyColor').value = state.theme.winBodyColor;
+                        }
                     }
 
                     if (state.windows) {
