@@ -269,7 +269,7 @@
         }
 
         .layers-panel {
-            width: 130px;
+            width: 150px;
             background: #c0c0c0;
             display: flex;
             flex-direction: column;
@@ -289,9 +289,9 @@
 
         .layer-item {
             display: flex;
-            align-items: center;
-            gap: 4px;
-            padding: 2px;
+            flex-direction: column;
+            gap: 2px;
+            padding: 3px;
             background: #e0e0e0;
             border: 1px solid #808080;
             cursor: pointer;
@@ -302,11 +302,29 @@
             color: #ffffff;
         }
 
+        .layer-row-top {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .layer-row-bottom {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 9px;
+        }
+
+        .layer-row-bottom input[type="range"] {
+            flex: 1;
+            height: 10px;
+        }
+
         .layer-item input[type="checkbox"] {
             cursor: pointer;
         }
 
-        .layer-item span {
+        .layer-item span.layer-title {
             flex: 1;
             white-space: nowrap;
             overflow: hidden;
@@ -344,10 +362,10 @@
         }
 
         .volume-control input[type="range"] {
-            width: 60px;
+            width: 50px;
         }
 
-        .game-container {
+        .game-wrapper {
             flex: 1;
             width: 100%;
             height: 100%;
@@ -356,6 +374,36 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            position: relative;
+        }
+
+        .game-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Modos de Relación de Aspecto */
+        .game-container.aspect-free {
+            width: 100%;
+            height: 100%;
+        }
+
+        .game-container.aspect-4-3 {
+            aspect-ratio: 4 / 3;
+            max-width: 100%;
+            max-height: 100%;
+            height: auto;
+        }
+
+        .game-container.aspect-16-9 {
+            aspect-ratio: 16 / 9;
+            max-width: 100%;
+            max-height: 100%;
+            height: auto;
         }
 
         /* UI Configuración */
@@ -482,7 +530,7 @@
             <span class="icon-label">Solitario</span>
         </div>
 
-        <!-- Acceso Directo Configuración (Último icono) -->
+        <!-- Acceso Directo Configuración -->
         <div class="shortcut-icon" tabindex="0" data-window="winConfig">
             <div class="icon-box">⚙️</div>
             <span class="icon-label">Configuración</span>
@@ -601,8 +649,8 @@
             </div>
         </div>
 
-        <!-- Ventana Paint Pro con Capas y Pinceles Avanzados -->
-        <div id="winPaint" class="window outset-border hidden" style="width: 580px; height: 380px; top: 80px; left: 230px;">
+        <!-- Ventana Paint Pro con Opacidad de Capa -->
+        <div id="winPaint" class="window outset-border hidden" style="width: 600px; height: 400px; top: 80px; left: 230px;">
             <div class="window-header" onmousedown="startDrag(event, 'winPaint')">
                 <span class="window-title">🎨 Paint Studio</span>
                 <div class="window-controls">
@@ -615,10 +663,10 @@
                         <input type="color" id="paintColor" value="#000000" title="Color principal">
                         
                         <label style="font-size: 10px;">Tamaño:</label>
-                        <input type="range" id="paintSize" min="1" max="50" value="5" style="width: 50px;">
+                        <input type="range" id="paintSize" min="1" max="50" value="5" style="width: 45px;">
                         
-                        <label style="font-size: 10px;">Opacidad:</label>
-                        <input type="range" id="paintAlpha" min="0.05" max="1" step="0.05" value="1" style="width: 50px;">
+                        <label style="font-size: 10px;">Flujo:</label>
+                        <input type="range" id="paintAlpha" min="0.05" max="1" step="0.05" value="1" style="width: 45px;">
 
                         <select id="brushType" class="outset-border" onchange="changeBrushType(this.value)">
                             <option value="round">Pincel Redondo</option>
@@ -637,7 +685,7 @@
 
                     <div class="paint-main">
                         <div class="paint-canvas-container inset-border" id="canvasBox">
-                            <!-- Los canvases de capas se insertan dinámicamente -->
+                            <!-- Canvases de capas dinámicos -->
                         </div>
 
                         <div class="layers-panel outset-border">
@@ -646,7 +694,7 @@
                                 <button class="outset-border" style="flex:1;" onclick="deleteActiveLayer()">- Borrar</button>
                             </div>
                             <div class="layers-list inset-border" id="layersList">
-                                <!-- Lista de capas visual -->
+                                <!-- Elementos de capa visual -->
                             </div>
                             <div style="display: flex; gap: 2px;">
                                 <button class="outset-border" style="flex:1;" onclick="moveLayerUp()">▲ Subir</button>
@@ -658,8 +706,8 @@
             </div>
         </div>
 
-        <!-- Ventana Juegos Flash Autoload con GitHub API -->
-        <div id="winGames" class="window outset-border hidden" style="width: 550px; height: 420px; top: 50px; left: 280px;">
+        <!-- Ventana Juegos Flash con Resolución Adaptable -->
+        <div id="winGames" class="window outset-border hidden" style="width: 580px; height: 440px; top: 50px; left: 280px;">
             <div class="window-header" onmousedown="startDrag(event, 'winGames')">
                 <span class="window-title">🎮 Juegos Flash</span>
                 <div class="window-controls">
@@ -668,9 +716,16 @@
             </div>
             <div class="window-body">
                 <div class="games-toolbar">
-                    <label for="flashSelect">Seleccionar Juego:</label>
+                    <label for="flashSelect">Juego:</label>
                     <select id="flashSelect" class="outset-border" onchange="playRepoSWF(this.value)">
                         <option value="">Escaneando carpeta juegos/...</option>
+                    </select>
+
+                    <label for="aspectRatioSelect">Res:</label>
+                    <select id="aspectRatioSelect" class="outset-border" onchange="changeAspectRatio('gameAreaContainer', this.value)">
+                        <option value="aspect-free">Libre</option>
+                        <option value="aspect-4-3">4:3</option>
+                        <option value="aspect-16-9">16:9</option>
                     </select>
 
                     <div class="volume-control">
@@ -678,13 +733,15 @@
                         <input type="range" id="gameVolume" min="0" max="1" step="0.05" value="1" oninput="changeGameVolume(this.value, 'game')">
                     </div>
                 </div>
-                <div class="game-container inset-border" id="flashArea">
-                    <p style="color: #aaa; text-align: center;">Selecciona un juego de la lista para empezar a jugar.</p>
+                <div class="game-wrapper inset-border">
+                    <div class="game-container aspect-free" id="gameAreaContainer">
+                        <p style="color: #aaa; text-align: center;">Selecciona un juego de la lista para empezar a jugar.</p>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Ventana Solitario -->
+        <!-- Ventana Solitario con Resolución Adaptable -->
         <div id="winSolitaire" class="window outset-border hidden" style="width: 580px; height: 450px; top: 60px; left: 160px;">
             <div class="window-header" onmousedown="startDrag(event, 'winSolitaire')">
                 <span class="window-title">🂠 Solitario</span>
@@ -694,13 +751,22 @@
             </div>
             <div class="window-body">
                 <div class="games-toolbar">
+                    <label for="solitaireAspectRatioSelect">Res:</label>
+                    <select id="solitaireAspectRatioSelect" class="outset-border" onchange="changeAspectRatio('solitaireAreaContainer', this.value)">
+                        <option value="aspect-free">Libre</option>
+                        <option value="aspect-4-3">4:3</option>
+                        <option value="aspect-16-9">16:9</option>
+                    </select>
+
                     <div class="volume-control">
                         <label for="solitaireVolume">🔊 Vol:</label>
                         <input type="range" id="solitaireVolume" min="0" max="1" step="0.05" value="1" oninput="changeGameVolume(this.value, 'solitaire')">
                     </div>
                 </div>
-                <div class="game-container inset-border" id="solitaireArea">
-                    <p style="color: #aaa; text-align: center;">Cargando Solitario desde la carpeta juegos/...</p>
+                <div class="game-wrapper inset-border">
+                    <div class="game-container aspect-free" id="solitaireAreaContainer">
+                        <p style="color: #aaa; text-align: center;">Cargando Solitario desde la carpeta juegos/...</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -844,8 +910,7 @@
         // --- Funciones de Personalización ---
         function setDesktopBgColor(color) {
             themeConfig.bgColor = color;
-            const desktop = document.getElementById('desktop');
-            desktop.style.backgroundColor = color;
+            document.getElementById('desktop').style.backgroundColor = color;
         }
 
         function loadWallpaperImage(event) {
@@ -928,7 +993,7 @@
         }
 
         // ==========================================
-        // --- PAINT STUDIO (Capas y Pinceles) ---
+        // --- PAINT STUDIO (Capas, Opacidad y Pinceles) ---
         // ==========================================
         const canvasBox = document.getElementById('canvasBox');
         const colorPicker = document.getElementById('paintColor');
@@ -940,8 +1005,8 @@
         let layerCounter = 0;
 
         let isDrawing = false;
-        let activeTool = 'pencil'; // 'pencil' | 'eraser'
-        let currentBrushType = 'round'; // 'round' | 'square' | 'soft' | 'custom'
+        let activeTool = 'pencil';
+        let currentBrushType = 'round';
         let customBrushImg = null;
         let lastX = 0, lastY = 0;
 
@@ -971,7 +1036,8 @@
                 name: layerName,
                 canvas: cvs,
                 ctx: ctx,
-                visible: true
+                visible: true,
+                opacity: 1.0
             };
 
             layers.push(layerObj);
@@ -987,8 +1053,16 @@
             }
         }
 
+        function setLayerOpacity(index, value) {
+            if (index >= 0 && index < layers.length) {
+                const opacity = parseFloat(value);
+                layers[index].opacity = opacity;
+                layers[index].canvas.style.opacity = opacity;
+            }
+        }
+
         function deleteActiveLayer() {
-            if (layers.length <= 1) return; // Mantener al menos una capa
+            if (layers.length <= 1) return;
             
             const layerToDelete = layers[activeLayerIndex];
             canvasBox.removeChild(layerToDelete.canvas);
@@ -1033,7 +1107,12 @@
             layers.forEach((layer, idx) => {
                 const item = document.createElement('div');
                 item.className = 'layer-item' + (idx === activeLayerIndex ? ' active' : '');
-                
+                item.onclick = () => setActiveLayer(idx);
+
+                // Fila Superior (Visibilidad + Nombre)
+                const rowTop = document.createElement('div');
+                rowTop.className = 'layer-row-top';
+
                 const chk = document.createElement('input');
                 chk.type = 'checkbox';
                 chk.checked = layer.visible;
@@ -1044,12 +1123,36 @@
                 };
 
                 const lbl = document.createElement('span');
+                lbl.className = 'layer-title';
                 lbl.textContent = layer.name;
 
-                item.onclick = () => setActiveLayer(idx);
+                rowTop.appendChild(chk);
+                rowTop.appendChild(lbl);
 
-                item.appendChild(chk);
-                item.appendChild(lbl);
+                // Fila Inferior (Control de Opacidad Individual)
+                const rowBottom = document.createElement('div');
+                rowBottom.className = 'layer-row-bottom';
+
+                const opLabel = document.createElement('span');
+                opLabel.textContent = 'Op:';
+
+                const opSlider = document.createElement('input');
+                opSlider.type = 'range';
+                opSlider.min = '0';
+                opSlider.max = '1';
+                opSlider.step = '0.05';
+                opSlider.value = layer.opacity;
+                opSlider.onclick = (e) => e.stopPropagation();
+                opSlider.oninput = (e) => {
+                    e.stopPropagation();
+                    setLayerOpacity(idx, e.target.value);
+                };
+
+                rowBottom.appendChild(opLabel);
+                rowBottom.appendChild(opSlider);
+
+                item.appendChild(rowTop);
+                item.appendChild(rowBottom);
                 list.appendChild(item);
             });
         }
@@ -1207,10 +1310,20 @@
         });
         if (canvasBox) paintResizeObserver.observe(canvasBox);
 
-        // --- Escaneo Automático y Carga Directa (GitHub API) ---
+        // ==========================================
+        // --- JUEGOS Y SOLITARIO (Con Relación de Aspecto) ---
+        // ==========================================
         let gamesLoaded = false;
         let activeGamePlayer = null;
         let activeSolitairePlayer = null;
+
+        function changeAspectRatio(containerId, aspectClass) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            container.classList.remove('aspect-free', 'aspect-4-3', 'aspect-16-9');
+            container.classList.add(aspectClass);
+        }
 
         async function loadGamesFromGitHubAPI() {
             if (gamesLoaded) return;
@@ -1247,10 +1360,10 @@
         }
 
         async function loadSolitaireGame() {
-            const solitaireArea = document.getElementById('solitaireArea');
-            if (solitaireArea.querySelector('ruffle-player')) return;
+            const container = document.getElementById('solitaireAreaContainer');
+            if (container.querySelector('ruffle-player')) return;
 
-            solitaireArea.innerHTML = '<p style="color: #aaa; text-align: center;">Buscando Solitario en juegos/...</p>';
+            container.innerHTML = '<p style="color: #aaa; text-align: center;">Buscando Solitario en juegos/...</p>';
 
             const apiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/juegos`;
 
@@ -1268,16 +1381,16 @@
                 if (solFile) {
                     playSolitaireSWF(solFile.download_url);
                 } else {
-                    solitaireArea.innerHTML = '<p style="color: #ff8888; text-align: center; padding: 10px;">No se encontró ningún archivo de Solitario.<br>Asegúrate de subir un archivo con el nombre <b>solitaire.swf</b> o <b>solitario.swf</b> en la carpeta <i>juegos/</i> de GitHub.</p>';
+                    container.innerHTML = '<p style="color: #ff8888; text-align: center; padding: 10px;">No se encontró ningún archivo de Solitario.<br>Asegúrate de subir un archivo con el nombre <b>solitaire.swf</b> o <b>solitario.swf</b> en la carpeta <i>juegos/</i> de GitHub.</p>';
                 }
             } catch (err) {
-                solitaireArea.innerHTML = '<p style="color: #ff8888; text-align: center;">Error al comunicarse con GitHub API.</p>';
+                container.innerHTML = '<p style="color: #ff8888; text-align: center;">Error al comunicarse con GitHub API.</p>';
             }
         }
 
         function playSolitaireSWF(swfDirectUrl) {
-            const solitaireArea = document.getElementById('solitaireArea');
-            solitaireArea.innerHTML = '';
+            const container = document.getElementById('solitaireAreaContainer');
+            container.innerHTML = '';
 
             if (window.RufflePlayer) {
                 const ruffle = window.RufflePlayer.newest();
@@ -1285,14 +1398,14 @@
                 player.style.width = "100%";
                 player.style.height = "100%";
 
-                solitaireArea.appendChild(player);
+                container.appendChild(player);
                 player.load(swfDirectUrl);
                 activeSolitairePlayer = player;
 
                 const currentVol = parseFloat(document.getElementById('solitaireVolume').value);
                 changeGameVolume(currentVol, 'solitaire');
             } else {
-                solitaireArea.innerHTML = '<p style="color: red; text-align: center;">Error: Ruffle no está cargado.</p>';
+                container.innerHTML = '<p style="color: red; text-align: center;">Error: Ruffle no está cargado.</p>';
             }
         }
 
@@ -1304,8 +1417,8 @@
 
             stopFlashGame('game', false);
 
-            const flashArea = document.getElementById('flashArea');
-            flashArea.innerHTML = '';
+            const container = document.getElementById('gameAreaContainer');
+            container.innerHTML = '';
 
             if (window.RufflePlayer) {
                 const ruffle = window.RufflePlayer.newest();
@@ -1313,14 +1426,14 @@
                 player.style.width = "100%";
                 player.style.height = "100%";
 
-                flashArea.appendChild(player);
+                container.appendChild(player);
                 player.load(swfDirectUrl);
                 activeGamePlayer = player;
 
                 const currentVol = parseFloat(document.getElementById('gameVolume').value);
                 changeGameVolume(currentVol, 'game');
             } else {
-                flashArea.innerHTML = '<p style="color: red; text-align: center;">Error: Ruffle no está cargado.</p>';
+                container.innerHTML = '<p style="color: red; text-align: center;">Error: Ruffle no está cargado.</p>';
             }
         }
 
@@ -1335,11 +1448,11 @@
 
         function stopFlashGame(type = 'game', resetSelect = false) {
             if (type === 'game') {
-                const flashArea = document.getElementById('flashArea');
-                if (flashArea) {
-                    const player = flashArea.querySelector('ruffle-player');
+                const container = document.getElementById('gameAreaContainer');
+                if (container) {
+                    const player = container.querySelector('ruffle-player');
                     if (player && typeof player.destroy === 'function') player.destroy();
-                    flashArea.innerHTML = '<p style="color: #aaa; text-align: center;">Selecciona un juego de la lista para empezar a jugar.</p>';
+                    container.innerHTML = '<p style="color: #aaa; text-align: center;">Selecciona un juego de la lista para empezar a jugar.</p>';
                 }
                 activeGamePlayer = null;
                 if (resetSelect) {
@@ -1347,11 +1460,11 @@
                     if (select) select.value = "";
                 }
             } else if (type === 'solitaire') {
-                const solitaireArea = document.getElementById('solitaireArea');
-                if (solitaireArea) {
-                    const player = solitaireArea.querySelector('ruffle-player');
+                const container = document.getElementById('solitaireAreaContainer');
+                if (container) {
+                    const player = container.querySelector('ruffle-player');
                     if (player && typeof player.destroy === 'function') player.destroy();
-                    solitaireArea.innerHTML = '<p style="color: #aaa; text-align: center;">Cargando Solitario desde la carpeta juegos/...</p>';
+                    container.innerHTML = '<p style="color: #aaa; text-align: center;">Cargando Solitario desde la carpeta juegos/...</p>';
                 }
                 activeSolitairePlayer = null;
             }
@@ -1385,6 +1498,7 @@
             const layersData = layers.map(l => ({
                 name: l.name,
                 visible: l.visible,
+                opacity: l.opacity,
                 data: l.canvas.toDataURL()
             }));
 
@@ -1473,6 +1587,10 @@
                             const currentL = layers[layers.length - 1];
                             currentL.visible = lData.visible;
                             currentL.canvas.style.display = lData.visible ? 'block' : 'none';
+                            
+                            const op = lData.opacity !== undefined ? lData.opacity : 1.0;
+                            currentL.opacity = op;
+                            currentL.canvas.style.opacity = op;
 
                             const img = new Image();
                             img.onload = function() {
