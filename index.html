@@ -371,6 +371,12 @@
             <span class="icon-label">Juegos Flash</span>
         </div>
 
+        <!-- Acceso Directo Solitario -->
+        <div class="shortcut-icon" tabindex="0" data-window="winSolitaire">
+            <div class="icon-box">🂠</div>
+            <span class="icon-label">Solitario</span>
+        </div>
+
         <!-- Ventana Créditos -->
         <div id="winCredits" class="window outset-border hidden" style="width: 360px; height: 230px; top: 40px; left: 80px;">
             <div class="window-header" onmousedown="startDrag(event, 'winCredits')">
@@ -474,11 +480,32 @@
 
                     <div class="volume-control">
                         <label for="gameVolume">🔊 Vol:</label>
-                        <input type="range" id="gameVolume" min="0" max="1" step="0.05" value="1" oninput="changeGameVolume(this.value)">
+                        <input type="range" id="gameVolume" min="0" max="1" step="0.05" value="1" oninput="changeGameVolume(this.value, 'game')">
                     </div>
                 </div>
                 <div class="game-container inset-border" id="flashArea">
                     <p style="color: #aaa; text-align: center;">Selecciona un juego de la lista para empezar a jugar.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ventana Solitario -->
+        <div id="winSolitaire" class="window outset-border hidden" style="width: 580px; height: 450px; top: 60px; left: 160px;">
+            <div class="window-header" onmousedown="startDrag(event, 'winSolitaire')">
+                <span class="window-title">🂠 Solitario</span>
+                <div class="window-controls">
+                    <button class="outset-border" onclick="closeWindow('winSolitaire')">X</button>
+                </div>
+            </div>
+            <div class="window-body">
+                <div class="games-toolbar">
+                    <div class="volume-control">
+                        <label for="solitaireVolume">🔊 Vol:</label>
+                        <input type="range" id="solitaireVolume" min="0" max="1" step="0.05" value="1" oninput="changeGameVolume(this.value, 'solitaire')">
+                    </div>
+                </div>
+                <div class="game-container inset-border" id="solitaireArea">
+                    <p style="color: #aaa; text-align: center;">Cargando Solitario desde la carpeta juegos/...</p>
                 </div>
             </div>
         </div>
@@ -530,6 +557,9 @@
             if (id === 'winGames') {
                 loadGamesFromGitHubAPI();
             }
+            if (id === 'winSolitaire') {
+                loadSolitaireGame();
+            }
         }
 
         function closeWindow(id) {
@@ -538,7 +568,10 @@
             
             win.classList.add('hidden');
             if (id === 'winGames') {
-                stopFlashGame(true);
+                stopFlashGame('game', true);
+            }
+            if (id === 'winSolitaire') {
+                stopFlashGame('solitaire');
             }
         }
 
@@ -619,22 +652,18 @@
 
             if (newWidth === 0 || newHeight === 0) return;
 
-            // Guardar dibujo previo en una imagen temporal
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = canvas.width;
             tempCanvas.height = canvas.height;
             const tempCtx = tempCanvas.getContext('2d');
             tempCtx.drawImage(canvas, 0, 0);
 
-            // Ajustar tamaño real del canvas
             canvas.width = newWidth;
             canvas.height = newHeight;
 
-            // Restaurar dibujo original
             ctx.drawImage(tempCanvas, 0, 0);
         }
 
-        // Detección de redimensionado dinámico para la ventana de Paint
         const paintResizeObserver = new ResizeObserver(() => {
             if (!document.getElementById('winPaint').classList.contains('hidden')) {
                 resizeCanvas();
@@ -678,7 +707,8 @@
 
         // --- Escaneo Automático y Carga Directa (GitHub API) ---
         let gamesLoaded = false;
-        let activeRufflePlayer = null;
+        let activeGamePlayer = null;
+        let activeSolitairePlayer = null;
 
         async function loadGamesFromGitHubAPI() {
             if (gamesLoaded) return;
@@ -714,13 +744,64 @@
             }
         }
 
+        async function loadSolitaireGame() {
+            const solitaireArea = document.getElementById('solitaireArea');
+            if (solitaireArea.querySelector('ruffle-player')) return; // Ya cargado
+
+            solitaireArea.innerHTML = '<p style="color: #aaa; text-align: center;">Buscando Solitario en juegos/...</p>';
+
+            const apiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/juegos`;
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('No se pudo acceder a la carpeta juegos');
+
+                const files = await response.json();
+                
+                // Busca un archivo .swf que tenga en el nombre 'solitaire', 'solitario' o 'klondike'
+                const solFile = files.find(file => {
+                    const name = file.name.toLowerCase();
+                    return name.endsWith('.swf') && (name.includes('solitaire') || name.includes('solitario') || name.includes('klondike'));
+                });
+
+                if (solFile) {
+                    playSolitaireSWF(solFile.download_url);
+                } else {
+                    solitaireArea.innerHTML = '<p style="color: #ff8888; text-align: center; padding: 10px;">No se encontró ningún archivo de Solitario.<br>Asegúrate de subir un archivo con el nombre <b>solitaire.swf</b> o <b>solitario.swf</b> en la carpeta <i>juegos/</i> de GitHub.</p>';
+                }
+            } catch (err) {
+                solitaireArea.innerHTML = '<p style="color: #ff8888; text-align: center;">Error al comunicarse con GitHub API.</p>';
+            }
+        }
+
+        function playSolitaireSWF(swfDirectUrl) {
+            const solitaireArea = document.getElementById('solitaireArea');
+            solitaireArea.innerHTML = '';
+
+            if (window.RufflePlayer) {
+                const ruffle = window.RufflePlayer.newest();
+                const player = ruffle.createPlayer();
+                player.style.width = "100%";
+                player.style.height = "100%";
+
+                solitaireArea.appendChild(player);
+                player.load(swfDirectUrl);
+                activeSolitairePlayer = player;
+
+                const currentVol = parseFloat(document.getElementById('solitaireVolume').value);
+                changeGameVolume(currentVol, 'solitaire');
+            } else {
+                solitaireArea.innerHTML = '<p style="color: red; text-align: center;">Error: Ruffle no está cargado.</p>';
+            }
+        }
+
         function playRepoSWF(swfDirectUrl) {
             if (!swfDirectUrl) {
-                stopFlashGame(true);
+                stopFlashGame('game', true);
                 return;
             }
 
-            stopFlashGame(false);
+            stopFlashGame('game', false);
 
             const flashArea = document.getElementById('flashArea');
             flashArea.innerHTML = '';
@@ -733,39 +814,45 @@
 
                 flashArea.appendChild(player);
                 player.load(swfDirectUrl);
-                activeRufflePlayer = player;
+                activeGamePlayer = player;
 
-                // Aplicar nivel de volumen actual al cargar
                 const currentVol = parseFloat(document.getElementById('gameVolume').value);
-                changeGameVolume(currentVol);
+                changeGameVolume(currentVol, 'game');
             } else {
                 flashArea.innerHTML = '<p style="color: red; text-align: center;">Error: Ruffle no está cargado.</p>';
             }
         }
 
-        function changeGameVolume(value) {
-            if (activeRufflePlayer) {
-                activeRufflePlayer.volume = parseFloat(value);
+        function changeGameVolume(value, type) {
+            const vol = parseFloat(value);
+            if (type === 'game' && activeGamePlayer) {
+                activeGamePlayer.volume = vol;
+            } else if (type === 'solitaire' && activeSolitairePlayer) {
+                activeSolitairePlayer.volume = vol;
             }
         }
 
-        function stopFlashGame(resetSelect = false) {
-            const flashArea = document.getElementById('flashArea');
-            if (flashArea) {
-                const player = flashArea.querySelector('ruffle-player');
-                if (player && typeof player.destroy === 'function') {
-                    player.destroy();
+        function stopFlashGame(type = 'game', resetSelect = false) {
+            if (type === 'game') {
+                const flashArea = document.getElementById('flashArea');
+                if (flashArea) {
+                    const player = flashArea.querySelector('ruffle-player');
+                    if (player && typeof player.destroy === 'function') player.destroy();
+                    flashArea.innerHTML = '<p style="color: #aaa; text-align: center;">Selecciona un juego de la lista para empezar a jugar.</p>';
                 }
-                flashArea.innerHTML = '<p style="color: #aaa; text-align: center;">Selecciona un juego de la lista para empezar a jugar.</p>';
-            }
-
-            activeRufflePlayer = null;
-
-            if (resetSelect) {
-                const select = document.getElementById('flashSelect');
-                if (select) {
-                    select.value = "";
+                activeGamePlayer = null;
+                if (resetSelect) {
+                    const select = document.getElementById('flashSelect');
+                    if (select) select.value = "";
                 }
+            } else if (type === 'solitaire') {
+                const solitaireArea = document.getElementById('solitaireArea');
+                if (solitaireArea) {
+                    const player = solitaireArea.querySelector('ruffle-player');
+                    if (player && typeof player.destroy === 'function') player.destroy();
+                    solitaireArea.innerHTML = '<p style="color: #aaa; text-align: center;">Cargando Solitario desde la carpeta juegos/...</p>';
+                }
+                activeSolitairePlayer = null;
             }
         }
 
@@ -842,7 +929,6 @@
                         });
                     }
 
-                    // Restaurar lienzo de Paint después de acomodar ventana
                     if (state.paintCanvas && ctx) {
                         setTimeout(() => {
                             resizeCanvas();
