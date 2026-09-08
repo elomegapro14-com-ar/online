@@ -550,6 +550,7 @@
             
             win.classList.remove('hidden');
             bringToFront(win);
+            ensureWindowIsVisible(win);
 
             if (id === 'winPaint') {
                 setTimeout(resizeCanvas, 50);
@@ -580,11 +581,24 @@
             win.style.zIndex = zIndex;
         }
 
+        function ensureWindowIsVisible(win) {
+            const desktop = document.getElementById('desktop');
+            const desktopRect = desktop.getBoundingClientRect();
+            const winRect = win.getBoundingClientRect();
+
+            // Verificar si la cabecera está fuera de la pantalla
+            if (winRect.top < 0 || winRect.top > desktopRect.height - 30 || winRect.left > desktopRect.width - 50 || winRect.right < 50) {
+                // Recentrar ventana en el escritorio
+                win.style.top = Math.max(20, (desktopRect.height - winRect.height) / 2) + 'px';
+                win.style.left = Math.max(20, (desktopRect.width - winRect.width) / 2) + 'px';
+            }
+        }
+
         document.querySelectorAll('.window').forEach(win => {
             win.addEventListener('mousedown', () => bringToFront(win));
         });
 
-        // --- Arrastrar Ventanas ---
+        // --- Arrastrar Ventanas con Restricciones de Bordes ---
         let isDragging = false, dragWin = null, offsetX = 0, offsetY = 0;
 
         function startDrag(e, id) {
@@ -598,8 +612,36 @@
 
         function onDrag(e) {
             if (!isDragging || !dragWin) return;
-            dragWin.style.left = (e.clientX - offsetX) + 'px';
-            dragWin.style.top = (e.clientY - offsetY) + 'px';
+            
+            const desktop = document.getElementById('desktop');
+            const desktopWidth = desktop.clientWidth;
+            const desktopHeight = desktop.clientHeight;
+            const winWidth = dragWin.offsetWidth;
+
+            let newLeft = e.clientX - offsetX;
+            let newTop = e.clientY - offsetY;
+
+            // Restricción TOP: Impide que la barra de título suba más arriba del borde superior
+            if (newTop < 0) {
+                newTop = 0;
+            }
+
+            // Restricción BOTTOM: Mantiene al menos la barra visible antes de la barra de tareas
+            if (newTop > desktopHeight - 30) {
+                newTop = desktopHeight - 30;
+            }
+
+            // Restricciones LATERALES: Asegura que al menos 100px de la ventana sean visibles para poder reengancharla
+            const minVisibleWidth = 100;
+            if (newLeft < -(winWidth - minVisibleWidth)) {
+                newLeft = -(winWidth - minVisibleWidth);
+            }
+            if (newLeft > desktopWidth - minVisibleWidth) {
+                newLeft = desktopWidth - minVisibleWidth;
+            }
+
+            dragWin.style.left = newLeft + 'px';
+            dragWin.style.top = newTop + 'px';
         }
 
         function stopDrag() {
@@ -746,7 +788,7 @@
 
         async function loadSolitaireGame() {
             const solitaireArea = document.getElementById('solitaireArea');
-            if (solitaireArea.querySelector('ruffle-player')) return; // Ya cargado
+            if (solitaireArea.querySelector('ruffle-player')) return;
 
             solitaireArea.innerHTML = '<p style="color: #aaa; text-align: center;">Buscando Solitario en juegos/...</p>';
 
@@ -758,7 +800,6 @@
 
                 const files = await response.json();
                 
-                // Busca un archivo .swf que tenga en el nombre 'solitaire', 'solitario' o 'klondike'
                 const solFile = files.find(file => {
                     const name = file.name.toLowerCase();
                     return name.endsWith('.swf') && (name.includes('solitaire') || name.includes('solitario') || name.includes('klondike'));
@@ -924,6 +965,7 @@
                                     win.classList.add('hidden');
                                 } else {
                                     win.classList.remove('hidden');
+                                    ensureWindowIsVisible(win);
                                 }
                             }
                         });
